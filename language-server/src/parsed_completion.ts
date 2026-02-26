@@ -79,9 +79,9 @@ namespace Sort
     export const ImportModule = "8c";
     export const MemberProp_Direct = "a";
     export const MemberProp_Parent = "c";
-    export const MemberProp_Direct_Expected = "6";
+    export const MemberProp_Direct_Expected = "6a";
     export const MemberProp_Parent_Expected = "7";
-    export const Method_Direct_Expected = "8a";
+    export const Method_Direct_Expected = "6b";
     export const Method_Parent_Expected = "9";
     export const Method_Direct = "b";
     export const Method_Parent = "d";
