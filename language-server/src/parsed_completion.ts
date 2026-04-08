@@ -1176,6 +1176,59 @@ function AddCompletionsFromKeywords(context : CompletionContext, completions : A
             "property"
         ], completions);
 
+        if (context.baseStatement && context.baseStatement.next
+            && context.baseStatement.next instanceof scriptfiles.ASStatement
+            && context.baseStatement.next.ast
+        )
+        {
+            let nextNode = context.baseStatement.next.ast;
+
+            // We might be typing UCLASS in front of a class
+            if (nextNode.type == scriptfiles.node_types.ClassDefinition && !nextNode.macro)
+            {
+                if (CanCompleteToOnlyStart(context, "UCLASS"))
+                {
+                    completions.push({
+                            label: "UCLASS()",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword_Expected,
+                    });
+
+                    completions.push({
+                            label: "UCLASS(Abstract)",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword_Expected,
+                    });
+                }
+            }
+
+            // We might be typing USTRUCT in front of a struct
+            if (nextNode.type == scriptfiles.node_types.StructDefinition && !nextNode.macro)
+            {
+                if (CanCompleteToOnlyStart(context, "USTRUCT"))
+                {
+                    completions.push({
+                            label: "USTRUCT()",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword_Expected,
+                    });
+                }
+            }
+
+            // We might be typing UENUM in front of a struct
+            if (nextNode.type == scriptfiles.node_types.EnumDefinition && !nextNode.macro)
+            {
+                if (CanCompleteToOnlyStart(context, "UENUM"))
+                {
+                    completions.push({
+                            label: "UENUM()",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword_Expected,
+                    });
+                }
+            }
+        }
+
         if (CanCompleteTo(context, "UCLASS"))
         {
             completions.push({
@@ -1280,6 +1333,37 @@ function AddCompletionsFromKeywords(context : CompletionContext, completions : A
                             sortText: Sort.Keyword,
                     });
                     context.forceCaseInsensitive = true;
+
+                    // Add some potentially helpful snippets for common UPROPERTY specifiers
+                    completions.push({
+                            label: "UPROPERTY()",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword,
+                    });
+
+                    if (context.scope && context.scope.getDatabaseType() && context.scope.getDatabaseType().inheritsFrom("AActor"))
+                    {
+                        completions.push({
+                                label: "UPROPERTY(DefaultComponent)",
+                                kind: CompletionItemKind.Snippet,
+                                sortText: Sort.Keyword,
+                        });
+                    }
+
+                    if (context.scope && context.scope.getDatabaseType() && context.scope.getDatabaseType().inheritsFrom("UUserWidget"))
+                    {
+                        completions.push({
+                                label: "UPROPERTY(BindWidget)",
+                                kind: CompletionItemKind.Snippet,
+                                sortText: Sort.Keyword,
+                        });
+                    }
+
+                    completions.push({
+                            label: "UPROPERTY(EditAnywhere)",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword,
+                    });
                 }
             }
         }
@@ -1301,6 +1385,19 @@ function AddCompletionsFromKeywords(context : CompletionContext, completions : A
                                 sortText: Sort.Keyword,
                         });
                         context.forceCaseInsensitive = true;
+
+                        // Add some potentially helpful snippets for common UFUNCTION specifiers
+                        completions.push({
+                                label: "UFUNCTION()",
+                                kind: CompletionItemKind.Snippet,
+                                sortText: Sort.Keyword,
+                        });
+
+                        completions.push({
+                                label: "UFUNCTION(BlueprintEvent)",
+                                kind: CompletionItemKind.Snippet,
+                                sortText: Sort.Keyword,
+                        });
                     }
                 }
             }
@@ -1327,6 +1424,13 @@ function AddCompletionsFromKeywords(context : CompletionContext, completions : A
                             sortText: Sort.Keyword,
                     });
                     context.forceCaseInsensitive = true;
+
+                    // Add some potentially helpful snippets for common UFUNCTION specifiers
+                    completions.push({
+                            label: "UFUNCTION()",
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Keyword,
+                    });
                 }
             }
         }
