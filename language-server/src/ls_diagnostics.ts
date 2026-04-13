@@ -286,7 +286,8 @@ function VerifyDelegateBinds(asmodule : scriptfiles.ASModule, diagnostics : Arra
                 let boundArg = foundFunc.args[i].typename;
 
                 // If this was the wildcard parameter, make sure the types match now
-                if (wildcardParameterName && providedWildcardType && delegateType.delegateArgs[i].name == wildcardParameterName)
+                let isWildcard = wildcardParameterName && providedWildcardType && delegateType.delegateArgs[i].name == wildcardParameterName;
+                if (isWildcard)
                     signatureArg = typedb.TransferTypeQualifiers(signatureArg, providedWildcardType.name);
 
                 let leftTypename = typedb.CleanTypeName(signatureArg);
@@ -295,8 +296,22 @@ function VerifyDelegateBinds(asmodule : scriptfiles.ASModule, diagnostics : Arra
                 {
                     if (!typedb.ArePrimitiveTypesEquivalent(leftTypename, rightTypename))
                     {
-                        signatureMatches = false;
-                        break;
+                        if (isWildcard)
+                        {
+                            // Wildcard object parameters are allowed to bind to objects of child classes
+                            let argumentType = typedb.GetTypeByName(leftTypename);
+                            let boundType = typedb.GetTypeByName(rightTypename);
+                            if (!argumentType || !boundType || boundType.isValueType() || !argumentType.inheritsFrom(boundType.name))
+                            {
+                                signatureMatches = false;
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            signatureMatches = false;
+                            break;
+                        }
                     }
                 }
 
