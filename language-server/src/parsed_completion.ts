@@ -4259,7 +4259,7 @@ function AddMethodOverrideSnippets(context : CompletionContext, completions : Ar
             return;
         if (method.name && CanCompleteTo(context, method.name))
             includeParamsOnly = true;
-        if (method.returnType && CanCompleteTo(context, method.returnType))
+        if (method.returnType && CanCompleteToOnlyStart(context, method.returnType))
             includeReturnType = true;
         if (method.isPrivate)
             return;
@@ -4302,6 +4302,7 @@ function AddMethodOverrideSnippets(context : CompletionContext, completions : Ar
 
         if (includeParamsOnly)
         {
+            let filterText = method.name;
             if (!hasReturnType)
             {
                 complEdits = complEdits.concat(
@@ -4313,11 +4314,14 @@ function AddMethodOverrideSnippets(context : CompletionContext, completions : Ar
                         currentIndent + method.returnType+" "
                     )
                 );
+
+                if (includeReturnType)
+                    filterText = method.returnType+" "+filterText;
             }
 
             completions.push({
                 label: method.returnType+" "+method.name+"(...)",
-                filterText: method.name,
+                filterText: filterText,
                 insertText: complStr+"{\n"+currentIndent+superStr,
                 kind: CompletionItemKind.Snippet,
                 data: ["decl_snippet", method.containingType.name, method.name, method.id],
