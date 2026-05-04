@@ -4363,14 +4363,19 @@ function DetectNodeSymbols(scope : ASScope, statement : ASStatement, node : any,
                     delegateBind.scope = scope;
                     delegateBind.statement = statement;
                     delegateBind.node_expression = node;
-                    if (node.children[1].children[left_symbol.delegateObjectParam])
-                        delegateBind.node_object = node.children[1].children[left_symbol.delegateObjectParam];
-                    if (node.children[1].children[left_symbol.delegateFunctionParam])
-                        delegateBind.node_name = node.children[1].children[left_symbol.delegateFunctionParam];
 
-                    if (left_symbol.delegateWildcardParam != -1 && node.children[1].children[left_symbol.delegateWildcardParam])
+                    let paramIndexOffset = 0;
+                    if (left_symbol.isMixin)
+                        paramIndexOffset -= 1;
+
+                    if (node.children[1].children[left_symbol.delegateObjectParam+paramIndexOffset])
+                        delegateBind.node_object = node.children[1].children[left_symbol.delegateObjectParam+paramIndexOffset];
+                    if (node.children[1].children[left_symbol.delegateFunctionParam+paramIndexOffset])
+                        delegateBind.node_name = node.children[1].children[left_symbol.delegateFunctionParam+paramIndexOffset];
+
+                    if (left_symbol.delegateWildcardParam != -1 && node.children[1].children[left_symbol.delegateWildcardParam+paramIndexOffset])
                     {
-                        delegateBind.node_wildcard = node.children[1].children[left_symbol.delegateWildcardParam];
+                        delegateBind.node_wildcard = node.children[1].children[left_symbol.delegateWildcardParam+paramIndexOffset];
                         delegateBind.wildcard_name = left_symbol.macroMeta.get("delegatewildcardparam");
                     }
 
