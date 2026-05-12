@@ -76,7 +76,6 @@ namespace Sort
     export const Local = "4";
     export const Keyword_Expected = "8a";
     export const Keyword = "8b";
-    export const ImportModule = "8c";
     export const MemberProp_Direct = "a";
     export const MemberProp_Parent = "c";
     export const MemberProp_Direct_Expected = "6a";
@@ -97,7 +96,6 @@ namespace Sort
     export const Typename_CommonObject = "fd";
     export const Typename = "fe";
     export const Typename_Expected = "3";
-    export const Unimported = "x";
     export const Method_Override_Snippet = "0";
     export const Namespace_Unexpected = "z";
     export const Snippet = "z";
@@ -212,10 +210,6 @@ export function Complete(asmodule: scriptfiles.ASModule, position: Position): Ar
         AddCompletionsForNamingSomethingNew(context, completions);
         return completions;
     }
-
-    // Add completions from import statements
-    if (AddCompletionsFromImportStatement(context, completions))
-        return completions;
 
     // Add completions from unreal macro specifiers
     if (AddCompletionsFromUnrealMacro(context, completions))
@@ -905,38 +899,6 @@ function AddCompletionsForNamingSomethingNew(context : CompletionContext, comple
     }
 
     return true;
-}
-
-function AddCompletionsFromImportStatement(context : CompletionContext, completions : Array<CompletionItem>) : boolean
-{
-    if (context.statement && context.statement.ast && context.statement.ast.type == scriptfiles.node_types.ImportStatement)
-    {
-        let complString = "";
-        if(context.completingSymbol)
-            complString = context.completingSymbol;
-
-        let untilDot = "";
-        let dotPos = complString.lastIndexOf(".");
-        if (dotPos != -1)
-            untilDot = complString.substr(0, dotPos+1);
-
-        for (let asmodule of scriptfiles.GetAllLoadedModules())
-        {
-            if (CanCompleteStringTo(complString, asmodule.modulename))
-            {
-                completions.push({
-                    label: asmodule.modulename,
-                    kind: CompletionItemKind.File,
-                    filterText: asmodule.modulename.substr(untilDot.length),
-                    insertText: asmodule.modulename.substr(untilDot.length),
-                    sortText: Sort.ImportModule,
-                });
-            }
-        }
-        return true;
-    }
-
-    return false;
 }
 
 function AddCompletionsFromUnrealMacro(context : CompletionContext, completions : Array<CompletionItem>) : boolean
@@ -2134,7 +2096,6 @@ export function AddMixinCompletions(context : CompletionContext, completions : A
     if (context.priorType instanceof typedb.DBNamespace)
         return;
 
-    // Not yet imported mixin functions
     let mixinsForType : typedb.DBType = context.priorType;
     if (!mixinsForType)
         mixinsForType = context.scope.getParentType();
@@ -3128,19 +3089,6 @@ function ExtractPriorExpressionAndSymbol(context : CompletionContext, node : any
                 context.completingSymbol = node.name.value;
             else
                 context.completingSymbol = "";
-            return true;
-        }
-        break;
-        case scriptfiles.node_types.ImportStatement:
-        {
-            context.priorExpression = null;
-            context.priorType = null;
-            context.isNamingSomethingNew = false;
-            if (node.children && node.children[0])
-            {
-                context.completingNode = node.children[0];
-                context.completingSymbol = node.children[0].value;
-            }
             return true;
         }
         break;
@@ -4861,7 +4809,7 @@ function AddCompletionsFromAccessSpecifiers(context : CompletionContext, complet
                         kind: CompletionItemKind.Method,
                         data: ["global_func", sym.namespace.getQualifiedNamespace(), sym.name, sym.id],
                         commitCharacters: [",", ";"],
-                        sortText: Sort.Unimported,
+                        sortText: Sort.Snippet,
                     };
 
                     compl.labelDetails = <CompletionItemLabelDetails>
