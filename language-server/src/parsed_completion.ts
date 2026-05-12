@@ -426,7 +426,8 @@ function GenerateCompletionArguments(context: CompletionContext): CompletionArgu
                     }
                     else
                     {
-                        args.nodesForPositionalArguments.push(argnode);
+                        if (!args.isAfterNamedArgument)
+                            args.nodesForPositionalArguments.push(argnode);
                     }
                 }
             }
@@ -743,25 +744,80 @@ function AddCompletionsFromCallSignature(context: CompletionContext, completions
         }
         else
         {
-            for (let arg of activeMethod.args)
+            let argumentNames = [];
+            for (let func of context.subOuterFunctions)
             {
-                // Skip named arguments we've already seen
-                if (argContext.usedArgumentNames.indexOf(arg.name) != -1)
+                // Check if this is a valid overload to be completing arguments of,
+                // or if it's already excluded from previous arguments.
+                let argumentIndex = context.subOuterArgumentIndex;
+                let argumentOffset = 0;
+
+                if (func.isMixin)
+                {
+                    argumentOffset = 1;
+                    argumentIndex += 1;
+                }
+
+                let overloadIsValid = true;
+                for (let usedName of argContext.usedArgumentNames)
+                {
+                    let foundArg = -1;
+                    for (let argIndex = argumentOffset; argIndex < func.args.length; ++argIndex)
+                    {
+                        if (func.args[argIndex].name == usedName)
+                        {
+                            foundArg = argIndex;
+                            break;
+                        }
+                    }
+
+                    if (foundArg == -1)
+                    {
+                        overloadIsValid = false;
+                        break;
+                    }
+                }
+
+                if (!overloadIsValid)
                     continue;
 
-                let complStr = arg.name+" =";
-                if (CanCompleteTo(context, complStr))
+                for (let i = 0; i < func.args.length; ++i)
                 {
-                    completions.push({
-                        label: complStr,
-                        insertText: complStr+" ",
-                        documentation: <MarkupContent> {
-                            kind: MarkupKind.Markdown,
-                            value: "```angelscript_snippet\n"+complStr+"\n\n```"
-                        },
-                        kind: CompletionItemKind.Snippet,
-                        sortText: Sort.Snippet,
-                    });
+                    let arg = func.args[i];
+
+                    if (argumentIndex < argContext.nodesForPositionalArguments.length)
+                    {
+                        if (i < argumentIndex)
+                            continue;
+                    }
+                    else
+                    {
+                        if (i < argContext.nodesForPositionalArguments.length)
+                            continue;
+                    }
+
+                    // Skip named arguments we've already seen
+                    if (argContext.usedArgumentNames.indexOf(arg.name) != -1)
+                        continue;
+                    if (argumentNames.indexOf(arg.name) != -1)
+                        continue;
+
+                    let complStr = arg.name+" =";
+                    if (CanCompleteTo(context, complStr))
+                    {
+                        completions.push({
+                            label: complStr,
+                            insertText: complStr+" ",
+                            documentation: <MarkupContent> {
+                                kind: MarkupKind.Markdown,
+                                value: "```angelscript_snippet\n"+complStr+"\n\n```"
+                            },
+                            kind: CompletionItemKind.Snippet,
+                            sortText: Sort.Snippet,
+                        });
+                    }
+
+                    argumentNames.push(arg.name);
                 }
             }
         }
