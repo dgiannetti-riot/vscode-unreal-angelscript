@@ -301,7 +301,7 @@ export class ASModule
         if (dependencyType)
             this.markDependencyType(dependencyType);
         else
-            this.markDependencyIdentifier(typename);
+            this.markDependencyIdentifier(typedb.CleanTypeName(typename));
     }
 
     markDependencyIdentifier(identifier : string)
@@ -5354,7 +5354,7 @@ function DetectSymbolsInType(scope : ASScope, statement : ASStatement, inSymbol 
         else
             symType = ASSymbolType.MemberFunction;
 
-        let identifierSym = AddIdentifierSymbol(scope, statement, node, symType, usedSymbol.containingType, usedSymbol.name);
+        AddIdentifierSymbol(scope, statement, node, symType, usedSymbol.containingType, usedSymbol.name);
         scope.module.markDependencySymbol(usedSymbol);
         return usedSymbol;
     }
@@ -5366,7 +5366,7 @@ function DetectSymbolsInType(scope : ASScope, statement : ASStatement, inSymbol 
         if (getAccessor && getAccessor instanceof typedb.DBMethod)
         {
             symType = ASSymbolType.MemberAccessor;
-            let identifierSym = AddIdentifierSymbol(scope, statement, node, symType, getAccessor.containingType, getAccessor.name);
+            AddIdentifierSymbol(scope, statement, node, symType, getAccessor.containingType, getAccessor.name);
             scope.module.markDependencyFunction(getAccessor);
             return typedb.LookupType(getAccessor.namespace, getAccessor.returnType);
         }
@@ -5375,7 +5375,7 @@ function DetectSymbolsInType(scope : ASScope, statement : ASStatement, inSymbol 
         if (setAccessor && setAccessor instanceof typedb.DBMethod && setAccessor.isProperty && setAccessor.args.length != 0)
         {
             symType = ASSymbolType.MemberAccessor;
-            let identifierSym = AddIdentifierSymbol(scope, statement, node, symType, setAccessor.containingType, setAccessor.name);
+            AddIdentifierSymbol(scope, statement, node, symType, setAccessor.containingType, setAccessor.name);
             scope.module.markDependencyFunction(setAccessor);
             return typedb.LookupType(setAccessor.namespace, setAccessor.args[0].typename);
         }
