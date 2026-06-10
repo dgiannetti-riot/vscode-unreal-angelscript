@@ -335,9 +335,19 @@ connection.onInitialize((_params): InitializeResult => {
     //connection.console.log("RootPath: "+RootPath);
     //connection.console.log("RootUri: "+RootUri+" from "+_params.rootUri);
 
+    // A workspace folder that contains another workspace folder is a browse/CWD
+    // root (for example an editor opened at the branch root with Script/ dirs
+    // nested under it), not a script root - globbing it would walk the whole
+    // tree and pull in unrelated .as files. Keep only the leaf-most roots for
+    // discovery. Module-name derivation still consults every RootUri via
+    // longest-prefix matching, so dropping ancestors here only affects what
+    // gets globbed, not how modules are named. Single-root setups are
+    // unaffected, since nothing is an ancestor of another.
+    let GlobRoots = filterNestedRoots(Roots);
+
     // Initially read and parse all angelscript files in the workspace
-    let GlobsRemaining = Roots.length;
-    for (let RootPath of Roots)
+    let GlobsRemaining = GlobRoots.length;
+    for (let RootPath of GlobRoots)
     {
         let globOptions: glob.IOptions = {
             ignore: settings?.scriptIgnorePatterns || []
@@ -1005,17 +1015,37 @@ function getFileUri(pathname : string) : string
     return ("file://" + uri);
 }
 
+// Remove any workspace root that is a strict ancestor of another root, so a
+// browse/CWD root (for example the branch root with Script/ dirs nested under
+// it) is not globbed as a script root. Paths are compared with normalized
+// separators and a trailing slash so "/a/Script" is not treated as a prefix of
+// "/a/ScriptOther".
+function filterNestedRoots(roots : string[]) : string[]
+{
+    const norm = (p : string) => p.replace(/\\/g, "/").replace(/\/+$/, "") + "/";
+    return roots.filter(a => {
+        const an = norm(a);
+        return !roots.some(b => b !== a && norm(b).startsWith(an));
+    });
+}
+
 function getModuleName(uri : string) : string
 {
     let modulename = decodeURIComponent(uri);
 
-    // This assumes all relative paths are globally unique.
+    // This assumes all relative paths are globally unique. Strip the longest
+    // matching root prefix so the most specific (deepest) workspace folder wins
+    // regardless of the order folders were registered in - a shallower ancestor
+    // root (for example the branch root) must not shadow the real Script root
+    // and produce a fully-qualified module name.
+    let bestRoot = "";
     for (let rootUri of RootUris) {
-        if (modulename.startsWith(rootUri)) {
-            modulename = modulename.replace(rootUri, "");
-            break;
-        }
+        if (modulename.startsWith(rootUri) && rootUri.length > bestRoot.length)
+            bestRoot = rootUri;
     }
+    if (bestRoot.length > 0)
+        modulename = modulename.replace(bestRoot, "");
+
     modulename = modulename.replace(".as", "");
     modulename = modulename.replace(/\//g, ".");
 

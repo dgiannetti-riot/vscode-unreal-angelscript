@@ -7,6 +7,14 @@ studio code to open the 'Script' folder created in your project directory.
 Your 'Script' folder must be set as the root/opened folder for the extension to
 function.
 
+## Multi-root Workspaces
+The extension supports multi-root workspaces where each `Script/` folder is its
+own workspace folder. You may also include a parent/branch folder (for example
+the repository root) as an additional workspace folder for browsing or for other
+tooling; a workspace folder that is an ancestor of another workspace folder is
+not scanned for scripts, and module names are derived from the most specific
+(deepest) matching folder, so folder order does not matter.
+
 ## Features
 ### Editor Connection
 The unreal-angelscript extension automatically makes a connection to the
